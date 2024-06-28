@@ -1,5 +1,110 @@
 <!DOCTYPE html>
 <html>
 	<body>
+		<script>
+			var YOUR_CLIENT_ID = '544736289646-925rb27rvlaktrpj493v1gl1stu2bauq.apps.googleusercontent.com';
+			//var YOUR_REDIRECT_URI = 'http://localhost/youtube';
+			var YOUR_REDIRECT_URI = 'https://www.youtube.com';
+		  //https://youtube.com/watch?v=juqBT1PTBK8
+		  // https://www.youtube.com/#state=5LGC6o6B&access_token=ya29.a0AXooCgvMI5ycxSvgRYB52reU88HB2pFYYtVZ6IcmFPwIrL21jtm3n8c924C0oeXxyQf4llQBuzhr7icZ1fh-iYUk8qaHxmwPDeEYmjFx-UYPWSrAH5g5P0_YUz6pD9QRzHKENbOPEUVP8ZWOeGQ7TFH-2MPfmV9feQaCgYKASgSARMSFQHGX2MiAw7iyk9wLSfrlSlyI3ZuQA0169&token_type=Bearer&expires_in=3599&scope=https://www.googleapis.com/auth/youtube.force-ssl
+		  
+		  //https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252Fwatch%253Fv%253DjuqBT1PTBK8&hl=en&ec=65620
+		  
+			// Parse query string to see if page request is coming from OAuth 2.0 server.
+			var fragmentString = location.hash.substring(1);
+			var params = {};
+			var regex = /([^&=]+)=([^&]*)/g, m;
+			while (m = regex.exec(fragmentString)) {
+			  params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+			}
+			if (Object.keys(params).length > 0 && params['state']) {
+			  if (params['state'] == localStorage.getItem('state')) {
+				localStorage.setItem('oauth2-test-params', JSON.stringify(params) );
+		  
+				trySampleRequest();
+			  } else {
+				console.log('State mismatch. Possible CSRF attack');
+			  }
+			}
+		  
+			function generateCryptoRandomState() {
+			  // Generate a random alphanumeric string
+			  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+			  let result = '';
+			  for (let i = 0; i < 32; i++) {
+				result += chars[Math.floor(Math.random() * chars.length)];
+			  }
+			  return result;
+			}
+		  
+			// If there's an access token, try an API request.
+			// Otherwise, start OAuth 2.0 flow.
+			function trySampleRequest() {
+			  var params = JSON.parse(localStorage.getItem('oauth2-test-params'));
+			  console.log("a1");
+			  console.log(params);
+			  if (params && params['access_token']) {
+				console.log("a2");
+				var xhr = new XMLHttpRequest();
+				xhr.open('GET',
+					'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&' +
+					'access_token=' + params['access_token']);
+		  
+				xhr.onreadystatechange = function (e) {
+				  if (xhr.readyState === 4 && xhr.status === 200) {
+					console.log("a3");
+					console.log(xhr.response);
+				  } else if (xhr.readyState === 4 && xhr.status === 401) {
+					console.log("a4");
+					// Token invalid, so prompt for user permission.
+					oauth2SignIn();
+				  }
+				};
+				xhr.send(null);
+			  } else {
+				oauth2SignIn();
+			  }
+			}
+		  
+			/*
+			 * Create form to request access token from Google's OAuth 2.0 server.
+			 */
+			function oauth2SignIn() {
+			  // create random state value and store in local storage
+			  var state = generateCryptoRandomState();
+			  localStorage.setItem('state', state);
+		  
+			  // Google's OAuth 2.0 endpoint for requesting an access token
+			  var oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
+		  
+			  // Create element to open OAuth 2.0 endpoint in new window.
+			  var form = document.createElement('form');
+			  form.setAttribute('method', 'GET'); // Send as a GET request.
+			  form.setAttribute('action', oauth2Endpoint);
+		  
+			  // Parameters to pass to OAuth 2.0 endpoint.
+			  var params = {'client_id': YOUR_CLIENT_ID,
+							'redirect_uri': YOUR_REDIRECT_URI,
+							'scope': 'https://www.googleapis.com/auth/youtube.force-ssl',
+							'state': state,
+							'include_granted_scopes': 'true',
+							'response_type': 'token'};
+		  
+			  // Add form parameters as hidden input values.
+			  for (var p in params) {
+				var input = document.createElement('input');
+				input.setAttribute('type', 'hidden');
+				input.setAttribute('name', p);
+				input.setAttribute('value', params[p]);
+				form.appendChild(input);
+			  }
+		  
+			  // Add form to page and submit it to open the OAuth 2.0 endpoint.
+			  document.body.appendChild(form);
+			  form.submit();
+			}
+		  </script>
+		  
+		  <button onclick="trySampleRequest();">Try sample request</button>
 	</body>
 </html>
