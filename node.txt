@@ -1,2 +1,8 @@
+- vercel demo deploy nodejs
 https://vercel.com/guides/using-express-with-vercel
+
+- example vercel nodejs express demo from vercel
+https://github.com/vercel/examples/blob/main/solutions/express/api/index.ts
+
+- someone has another to deploy vercel
 https://stackoverflow.com/questions/76576788/how-to-deploy-expressjs-node-application-to-vercel-getting-404-not-found-error
